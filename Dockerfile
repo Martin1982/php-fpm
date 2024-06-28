@@ -1,10 +1,11 @@
-FROM php:8.1-fpm
+FROM php:8.3-fpm
 
 LABEL maintainer="Vincent Letourneau <vincent@nanoninja.com>"
 
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y \
     g++ \
+    git \
     libbz2-dev \
     libc-client-dev \
     libcurl4-gnutls-dev \
@@ -58,7 +59,20 @@ RUN apt-get update && apt-get upgrade -y \
     && pecl install memcached && docker-php-ext-enable memcached \
     && pecl install mongodb && docker-php-ext-enable mongodb \
     && pecl install redis && docker-php-ext-enable redis \
-    && yes '' | pecl install imagick && docker-php-ext-enable imagick \
+    # && yes '' | pecl install imagick/imagick@master && docker-php-ext-enable imagick \
+    # START IMAGICK WORKAROUND \
+    && git clone https://github.com/Imagick/imagick.git --depth 1 /tmp/imagick && \
+        cd /tmp/imagick && \
+        git fetch origin master && \
+        git switch master && \
+        cd /tmp/imagick && \
+        phpize && \
+        ./configure && \
+        make && \
+        make install && \
+        apt-get remove -y git && \
+        docker-php-ext-enable imagick \
+    # END IMAGICK WORKAROUND
     && docker-php-source delete \
     && apt-get remove -y g++ wget \
     && apt-get autoremove --purge -y && apt-get autoclean -y && apt-get clean -y \
